@@ -1,39 +1,57 @@
 {
-  "name": "coffee-express-boilerplate",
+  "name": "syslog-parser",
   "version": "0.1.2",
-  "description": "A boilerplate CoffeeScript/Express template",
+  "description": "script to parse syslog file for cm-accept",
   "main": "server.coffee",
   "author": {
-    "name": "Brendan Goodenough",
-    "email": "brendan@goodenough.nz",
-    "url": "https://www.goodenough.nz"
+    "name": "Ekta Mehta",
+    "email": "emehta@glgroup.com"
   },
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nerdenough/coffee-express-boilerplate.git"
-  },
-  "bugs": {
-    "url": "https://github.com/nerdenough/coffee-express-boilerplate/issues"
-  },
-  "homepage": "https://github.com/nerdenough/coffee-express-boilerplate#readme",
   "scripts": {
-    "start": "nodemon server.coffee",
-    "test": "gulp test"
+    "build:css": "stylus stylus --out public/css",
+    "watch:css": "stylus --watch stylus --out public/css",
+    "watch:html": "pug --watch --obj '{\"livereload\": true}' --out public/ --pretty --hierarchy --doctype html public/",
+    "build:js": "find ./js -type f -name '*.coffee' -print0 | sort -z | xargs -0 browserify -t coffeeify --extension='.coffee' | uglifyjs --compress 2>/dev/null > ./public/js/app.js",
+    "build:jsdebug": "find ./js -type f -name '*.coffee' -print0 | sort -z | xargs -0 browserify -t coffeeify --extension='.coffee' --debug  > ./public/js/app.js",
+    "watch:js": "watch 'npm run build:jsdebug' --extensions .coffee,.json client",
+    "build": "npm run build:js && npm run build:css",
+    "start": "export NODE_ENV=production && npm run start:server",
+    "test": "'npm run watch:js' 'npm run watch:css' 'npm run watch:server' 'npm run watch:html' 'npm run start:livereload'",
+    "start:server": "coffee server.coffee",
+    "watch:server": "nodemon --watch server --watch templates -e coffee,jade,css server.coffee",
+    "start:livereload": "live-reload --port 9080 --delay=2000 build server",
+    "clean": "rm -rf build",
+    "prestart": "npm run clean && npm run build",
+    "pretest": "npm run clean && npm run build",
+    "prebuild": "mkdir -p public/js public/css"
   },
   "dependencies": {
+    "bluebird": "^3.4.6",
     "body-parser": "^1.15.0",
+    "coffee-script": "^1.11.1",
     "connect-coffee-script": "^0.2.1",
     "cookie-parser": "^1.4.1",
+    "debug": "^2.2.0",
     "express": "^4.13.4",
+    "live-reload": "^1.1.0",
+    "lodash": "^4.16.4",
     "morgan": "^1.7.0",
     "nib": "^1.1.0",
+    "nodemon": "^1.11.0",
     "pug": "^2.0.0-alpha1",
-    "stylus": "^0.54.2"
+    "readline-promise": "0.0.1",
+    "shelljs": "^0.7.4",
+    "stylus": "^0.54.2",
+    "ua-parser-js": "^0.7.10",
+    "watch": "github:duanefields/watch"
   },
   "devDependencies": {
     "chai": "^3.5.0",
     "gulp": "^3.9.1",
     "gulp-mocha": "^2.2.0"
+  },
+  "engines": {
+    "node": "6.2.1"
   }
 }
