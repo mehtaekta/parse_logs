@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Coffee Express Boilerplate
 Coffee Express Boilerplate is a template that provides the base code for
 creating a server with CoffeeScript and Express. This package also sets up
@@ -73,3 +74,6 @@ Routes should contain all your router specific files.
 ### /views
 Views should contain all of your pug views. The structure provided is just an
 example of how your views could be laid out.
+=======
+# parse_logs
+>>>>>>> f5db99c1490b085cb8677e3527db9857f99175c0
