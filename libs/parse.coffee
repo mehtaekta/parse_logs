@@ -23,7 +23,13 @@ actions = {
      "onbeforeunload": 0
 }
 
-scanToExtractJson = (region) ->
+pseries = (list) ->
+  p = promise.resolve()
+  list.reduce ((pacc, fn) ->
+    pacc = pacc.then(fn)
+  ), p
+
+scanToExtractJsonLogs = (region) ->
   inputFileName = './data/syslog.1.gz.singapore_10-06-2016_00-17-13_.log'
   outputFileName = 'data/test.txt'
   exec('gunzip -c ./data/syslog.1.gz.singapore_10-06-2016_00-17-13_.log | grep "cm-accept tracking"  | grep -o -e "{[^}]*}"')
@@ -33,7 +39,7 @@ scanToExtractJson = (region) ->
 readToParseJson = (fileName) ->
   fileName= fileName ? 'data/test.txt'
   # console.log 'fileName^^^^^^^^^^^^^', fileName
-  output = []
+  output = {}
   mapAction = {}
   mapUA = {}
   # pass what you would normally pass to createInterface here
@@ -50,9 +56,18 @@ readToParseJson = (fileName) ->
   ).then((count) ->
     # console.log mapAction
     # console.log mapUA
-    output.push(mapAction)
-    output.push(mapUA)
-    console.log count, output.length
+    dataArr = []
+    _.map mapAction, (value, key) ->
+      json =
+        cpid: key
+        action: value
+      dataArr.push json
+    output.mapAction = mapAction
+    output.mapUA = mapUA
+    output.actionUAArr = dataArr
+    # output.push(mapAction)
+    # output.push(mapUA)
+    # console.log count
     promise.resolve output
   ).caught (err) ->
     throw err
@@ -60,28 +75,20 @@ readToParseJson = (fileName) ->
 
 processDropOutData = (data) ->
   # console.log 'data.mapAction', data[0]
-  dataArr = []
-  actionArr =_.map data[0], (value, key) ->
-    json =
-      cpid: key
-      action: value
-    dataArr.push json
+  actionArr =_.map data.mapAction, (value, key) ->
     value
-  
   _.map actions, (value, key) ->
-    itemsCount = _.size (_.find actionArr, (item) ->
-      return _.includes item, key
+    itemsCount = _.size (_.filter actionArr, (item) ->
+      return item.indexOf(key) > -1
     )
     actions[key] = itemsCount
 
-  console.log 'actions^^^^^^^', dataArr
   data.actions = actions
-  data.actionsArr = dataArr
   promise.resolve data
 
 processUAData = (data) ->
   uaArr = []
-  actionUaArr =_.map data[1], (value, key) ->
+  actionUaArr =_.map data.mapUA, (value, key) ->
     ua = parser(value)
     uaInfo = 
       cpid: key
@@ -93,22 +100,10 @@ processUAData = (data) ->
       type: ua.device.type ? 'desktop'
 
     uaArr.push(uaInfo)
-  _.merge(data.actionsArr, uaArr)
+  _.merge(data.actionUAArr, uaArr)
   # console.log 'ua*********', uaArr
 
   promise.resolve data
-
-fnlist = [
-  readToParseJson
-  processDropOutData
-  processUAData
-]
-
-pseries = (list) ->
-  p = promise.resolve()
-  list.reduce ((pacc, fn) ->
-    pacc = pacc.then(fn)
-  ), p
 
 module.exports.processActionStats = () ->
   fnlist = [
@@ -119,7 +114,7 @@ module.exports.processActionStats = () ->
   .then (data) ->
     output = {}
     output.actions = data.actions
-    console.log 'data********************', data.actionsArr
+    # console.log 'data********************', data
     promise.resolve output
 
 module.exports.parseUAByAction = (action) ->
@@ -130,15 +125,20 @@ module.exports.parseUAByAction = (action) ->
   ]
   pseries(fnlist)
   .then (data) ->
-    output = {}
-    output.actions = data.actions
-    console.log 'data********************', data.actionsArr
-    promise.resolve output
-  
-  # # scanToParseJson('si')
-  # read('si')
-  # .then (data) ->
-  #   promise.resolve data
-  
-  # # exec "pwd", @puts
+    actionUAArr = data.actionUAArr
+    actionUAFiltered = _.filter actionUAArr, (actionUA) ->
+      if actionUA.action.indexOf(action) > -1
+        actionUA
+    
+    os = []
+    actionUAGroupedByOS = _.groupBy actionUAFiltered, 'os'
+    _.each actionUAGroupedByOS, (value, key) ->
+        os.push(
+          key: key
+          count: _.size value
+        )
+      # console.log value, key
+    # console.log 'actionUAGroupedByOS********************', os
+    promise.resolve output =
+      os: os
   

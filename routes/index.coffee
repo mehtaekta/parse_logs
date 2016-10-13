@@ -1,6 +1,8 @@
 express = require 'express'
 router = express.Router()
 parse = require '../libs/parse'
+pug = require 'pug'
+path = require 'path'
 
 # GET: /
 router.get '/uaStats', (req, res) ->
@@ -8,9 +10,8 @@ router.get '/uaStats', (req, res) ->
   parse.parseUAByAction(action)
   .then (data) ->
     console.log 'data&&&&&&&&&&&&&', data
-  data = 
-    hello: 'world'
-  res.json data
+    renderedTemplate = pug.renderFile path.join(__dirname, '../views/index/uaStats.pug'), data
+    res.json renderedTemplate
 
 router.get '/', (req, res) ->
   parse.processActionStats()

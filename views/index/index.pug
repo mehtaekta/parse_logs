@@ -2,8 +2,12 @@ extends ../shared/layout
 
 block content
   h1= title
-  dl
-    for prop, key in actions
-      dt 
-        a(href='javascript:void(0)' onclick=`showUAStats('${key}')`) #{key}
-      dl #{prop}
+  div(style="width:100%")
+    div(style="display:inline-block;width:40%")
+      dl
+        for prop, key in actions
+          dt 
+            a(href='javascript:void(0)' onclick=`showUAStats('${key}')`) #{key}
+          dl #{prop}
+    div(style="display:inline-block;vertical-align:top")
+      span.UAstats
